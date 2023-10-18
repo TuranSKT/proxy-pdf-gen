@@ -28,7 +28,9 @@ This tool allows users to generate a PDF containing multiple proxy cards for tab
     ```bash
     pip install -r requirements.txt
     ```
-5. **Download OpenCV Models**: Ensure you have the necessary OpenCV models downloaded. Follow the instructions provided in the [provided article](<YOUR_MEDIUM_ARTICLE_LINK>).
+5. **Download OpenCV Models**: Ensure you have the necessary OpenCV models downloaded. 
+    - [Download the Models folder here](<https://github.com/Araxeus/PNG-Upscale/tree/main/Models>).
+    - Follow the instructions provided in the [provided article](<https://towardsdatascience.com/deep-learning-based-super-resolution-with-opencv-4fd736678066>).
 
 ## Usage
 
