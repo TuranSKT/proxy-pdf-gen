@@ -1,10 +1,10 @@
+import argparse
 from PIL import Image
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 import os
 import cv2
-from cv2 import dnn_superres
 
 # Constants
 CARD_WIDTH_INCH = 2.31
@@ -18,21 +18,18 @@ CARD_FOLDER = "cards"
 OUTPUT_PDF = "output.pdf"
 MODEL_PATH = "Models/EDSRx3.pb"  # Change to the path of the model you downloaded
 
-# Create an SR object
-sr = dnn_superres.DnnSuperResImpl_create()
-sr.readModel(MODEL_PATH)
-sr.setModel("edsr", 3)  # You can change the model name and scale based on which model you're using
-
-
 def upscale_image_with_opencv(image_path):
+    from cv2 import dnn_superres
+    sr = dnn_superres.DnnSuperResImpl_create()
+    sr.readModel(MODEL_PATH)
+    sr.setModel("edsr", 3)  # You can change the model name and scale based on which model you're using
     image = cv2.imread(image_path)
     result = sr.upsample(image)
     upscaled_image_path = "/tmp/upscaled_image.png"
     cv2.imwrite(upscaled_image_path, result)
     return upscaled_image_path
 
-
-def generate_pdf_from_cards(card_folder, output_pdf):
+def generate_pdf_from_cards(card_folder, output_pdf, upscale=False):
     card_files = [f for f in os.listdir(card_folder) if f.lower().endswith(('.png', '.jpg'))]
     card_files.sort()  # Ensure a consistent order
 
@@ -41,13 +38,15 @@ def generate_pdf_from_cards(card_folder, output_pdf):
 
     for idx, card_file in enumerate(card_files):
         card_image_path = os.path.join(card_folder, card_file)
-        upscaled_image_path = upscale_image_with_opencv(card_image_path)
 
-        card_image = Image.open(upscaled_image_path)
+        if upscale:
+            card_image_path = upscale_image_with_opencv(card_image_path)
+        
+        card_image = Image.open(card_image_path)
         card_image = card_image.resize((int(CARD_WIDTH_INCH * inch), int(CARD_HEIGHT_INCH * inch)), Image.LANCZOS)
 
         for _ in range(3):
-            c.drawInlineImage(upscaled_image_path, x_offset, y_offset, width=CARD_WIDTH_INCH * inch, height=CARD_HEIGHT_INCH * inch)
+            c.drawInlineImage(card_image_path, x_offset, y_offset, width=CARD_WIDTH_INCH * inch, height=CARD_HEIGHT_INCH * inch)
 
             x_offset += CARD_WIDTH_INCH * inch
             if x_offset + CARD_WIDTH_INCH * inch > PAGE_WIDTH - MARGIN:
@@ -60,6 +59,11 @@ def generate_pdf_from_cards(card_folder, output_pdf):
 
     c.save()
 
-generate_pdf_from_cards(CARD_FOLDER, OUTPUT_PDF)
-print(f"PDF generated at {OUTPUT_PDF}")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate PDF from cards.')
+    parser.add_argument('--upscale', action='store_true', help='Enable upscaling of images using OpenCV.')
+    args = parser.parse_args()
+
+    generate_pdf_from_cards(CARD_FOLDER, OUTPUT_PDF, upscale=args.upscale)
+    print(f"PDF generated at {OUTPUT_PDF}")
 
